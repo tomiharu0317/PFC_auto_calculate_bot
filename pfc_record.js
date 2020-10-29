@@ -1,9 +1,9 @@
-const ACCESS_TOKEN = 'Z6tzun1cRIC1u1WHlgBMafxno2IOy/oVnMDIxq1L1p+OmZ//L2Djy4thpXX9odd7gHSiLiuqjSygna6MYX2Ev0/Vi+REzDF90WS6QUXl4OUOBLzTYgaBnncceOt9ai6wBG4/MsBHrUZexK93pZ8Z/QdB04t89/1O/w1cDnyilFU=';
+const ACCESS_TOKEN = 'J6vOd6E/I18qzMmXeSH4J2Lb72tsZBTKOTjqFHSh72f8bQjNHT6Rceqyr/ncJI9CgHSiLiuqjSygna6MYX2Ev0/Vi+REzDF90WS6QUXl4OWXfx7I1uelqB94kyt27jua65K+cd500nVdgagK0a9PkQdB04t89/1O/w1cDnyilFU=';
 const REPLY_URL = 'https://api.line.me/v2/bot/message/reply';
 
 const SHEET_ID = "1TY6ppgtHWGisrL8zsrThcKSyOalC-7Ao53P5OVoQGcE";
 
-const sheet = SpreadsheetApp.openById("SHEET_ID");
+const sheet = SpreadsheetApp.openById(SHEET_ID);
 const shokuzaiSheet = sheet.getSheetByName('shokuzai');
 const recordSheet = sheet.getSheetByName("octo2020");
 
@@ -113,11 +113,11 @@ const addFood = (messageListOption) => {
 
     let foodName = messageListOption.shift();
 
-    // 不明 => 0に変更
-    // 全てnumber型でなければvalidate
+    // 文字列の数値 => isNaN => false
+    // 文字列 => isNaN => true
 
     for (let i = 0; i < 6; i++) {
-        if (typeof(messageListOption[i]) !== 'number') {
+        if (isNaN(messageListOption[i])) {
             replyMessage = "数値を入力してください。";
             flag = false;
             break;
@@ -125,12 +125,15 @@ const addFood = (messageListOption) => {
     }
 
     // 値を登録
-    let lastRow = shokuzaiSheet.getLastRow();
+    if (flag) {
 
-    shokuzaiSheet.getRange(lastRow+1, 1, 1, 7).setValues(copyListOption);
+        // あとはこの部分
 
-    if (flag){
-        replyMessage = "食材 ${foodName} を追加しました。";
+        // let lastRow = shokuzaiSheet.getLastRow();
+        // shokuzaiSheet.getRange(lastRow+1, 1, 1, 7).setValues(copyListOption);
+
+        replyMessage = "食材 ${foodName} を追加しました。".replace("${foodName}", foodName);
+
     }
 
     return replyMessage;
