@@ -109,7 +109,11 @@ const addFood = (messageListOption) => {
 
     let replyMessage = '';
 
+    let values = [];
+
     const copyListOption = [...messageListOption];
+
+    values.push(copyListOption);
 
     let foodName = messageListOption.shift();
 
@@ -129,8 +133,9 @@ const addFood = (messageListOption) => {
 
         // あとはこの部分
 
-        // let lastRow = shokuzaiSheet.getLastRow();
-        // shokuzaiSheet.getRange(lastRow+1, 1, 1, 7).setValues(copyListOption);
+        let lastRow = shokuzaiSheet.getLastRow();
+        shokuzaiSheet.getRange(lastRow+1, 1, 1, 7).setValues(values);
+        // replyMessage = shokuzaiSheet.getRange(lastRow+1, 1, 1, 7).getA1Notation();
 
         replyMessage = "食材 ${foodName} を追加しました。".replace("${foodName}", foodName);
 

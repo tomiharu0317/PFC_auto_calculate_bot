@@ -9,10 +9,6 @@ let messageList = userMessage.split(' ');
 let messageLength = messageList.length;
 
 
-//食材をshokuzaiシートに追加
-const addFood = (messageListOption) => {
-
-
 let flag = true;
 let replyMessage = '';
 const copyListOption = [...messageListOption];
