@@ -1,7 +1,11 @@
 // 投稿されたメッセージを取得
+追加
+
 let userMessage = "1 2 3 4 5 6";
 let userMessage = "不明　不明 3 4 5 6";
 
+
+変更
 
 // 全角スペース => 半角スペース
 userMessage = userMessage.replace(/　/g, ' ');
@@ -37,3 +41,5 @@ if (flag) {
         replyMessage = "食材 ${foodName} を追加しました。";
 
 }
+
+
