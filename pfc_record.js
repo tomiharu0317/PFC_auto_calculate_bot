@@ -48,8 +48,8 @@ function doPost(e) {
           replyMessage = addRecord(messageList.slice(1));
       }
   } else if (command === '確認'){
-      if (messageLength > 2 || messageLength < 2){
-          replyMessage = "フォーマット:\n①食材の成分情報の確認\n確認 <食材名>\n\n②記録の確認\n確認 <日付>\n\n※空白を連続で挿入すると正しく判定できません。";
+      if (messageLength > 3 || messageLength < 3){
+          replyMessage = "フォーマット:\n①食材の成分情報の確認\n確認 食材 <食材名>\n\n②記録の確認\n確認 記録 <日付>\n\n※空白を連続で挿入すると正しく判定できません。";
       } else {
           replyMessage = readRecord(messageList.slice(1));
       }
@@ -105,7 +105,7 @@ const help = (option) => {
     } else if (option === '変更'){
         replyMessage = "【コマンドの説明】\n変更：食材の成分情報、または記録を変更します。\n\n①食材の成分情報の変更\n\n・フォーマット\n変更 食材 <食材名> <分量(あたり)(g)><タンパク質> <脂質> <炭水化物> <糖質> <カロリー(kcal)>\n\n②記録の変更\n\n・フォーマット\n変更 記録 <日付> <食材名> <番号> <分量>\n\n※番号は確認コマンドで確認することが出来ます。";
     } else if (option === '確認'){
-        replyMessage = "【コマンドの説明】\n確認：食材の情報、または記録内容を表示します。\n\n①食材の成分情報の確認\n\n・フォーマット\n確認 <食材名>\n\n②記録の確認\n\n・フォーマット\n確認 <日付>\n\n・例\n確認　9/21";
+        replyMessage = "【コマンドの説明】\n確認：食材の情報、または記録内容を表示します。\n\n①食材の成分情報の確認\n\n・フォーマット\n確認 食材 <食材名>\n\n②記録の確認\n\n・フォーマット\n確認 記録 <日付>\n\n・例\n確認　9/21";
     } else {
         replyMessage = "【使い方】\n使用できるコマンドを、指定されたフォーマットに沿って入力していただきます。空白は半角・全角を区別しません。\n\n【使用できるコマンド】\n追加、記録、変更、確認、ヘルプ\n\n【ヘルプコマンド】\n\nヘルプ　概要：この説明文が表示されます。\n\nヘルプ　追加：追加コマンドの説明、フォーマット\n\nヘルプ　記録：記録コマンドの説明、フォーマット\n\nヘルプ　変更：変更コマンドの説明、フォーマット\n\nヘルプ　確認：確認コマンドの説明、フォーマット\n";
     }
@@ -243,7 +243,58 @@ const readRecord = (messageListOption) => {
 
     let replyMessage = '';
 
+    let command = messageListOption[0];
+    let target = messageListOption[1];
+
+    if (command === '食材') {
+        replyMessage = readFoodInfo(target);
+
+    } else if (command === '記録') {
+        replyMessage = '記録';
+
+    } else {
+        replyMessage = "フォーマット:\n①食材の成分情報の確認\n確認 食材 <食材名>\n\n②記録の確認\n確認 記録 <日付>\n\n※空白を連続で挿入すると正しく判定できません。";
+    }
+
     // A2:lastRowまでの間で食材名と一致する行を探す => その行のAN:GNまでを取得して渡す
 
     return replyMessage;
 };
+
+const readFoodInfo = (foodName) => {
+
+    let replyMessage = '';
+
+    let lastRow = shokuzaiSheet.getLastRow();
+    let foodNum = lastRow - 1;
+
+    let flag = true;
+
+    let targetRow = 0;
+
+    // [['さつまいも'], ['もち'], ['そば'], ['プロテイン']]
+    let foodList = shokuzaiSheet.getRange(2, 1, foodNum, 1).getValues();
+
+    for (let j = 0; j < foodNum; j++) {
+        if (foodList[j] == foodName) {
+            targetRow = j + 2;
+            break;
+        }
+
+        if (j === foodNum - 1) {
+            replyMessage = "入力した食材は存在しません";
+            flag = false;
+            break;
+        }
+    }
+
+    if (flag) {
+        // [['さつまいも'], ['1'], ['2'], ['3'], ['4'], ['5'], ['6']]
+        let foodInfo = shokuzaiSheet.getRange(targetRow, 1, 1, 7).getValues();
+
+        replyMessage = foodInfo.join(' ');
+    }
+
+
+    return replyMessage;
+}
