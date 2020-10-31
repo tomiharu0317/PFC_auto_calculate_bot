@@ -43,3 +43,39 @@ if (flag) {
 }
 
 
+let day = '';
+
+day = '/';
+day = '/11';
+day = '12/11';
+day = '12/11/22';
+day = '21/11';
+day = '12/34';
+day = 'もじ/34';
+day = '12/もじ';
+
+let monthDate = day.split('/');
+monthDate = day.split('/');
+
+let monthDateLength = monthDate.length;
+
+let month = parseInt(monthDate[0]);
+month = parseInt(monthDate[0]);
+let date = parseInt(monthDate[1]);
+date = parseInt(monthDate[1]);
+
+isNaN(month);
+isNaN(date);
+
+const Date = new Date();
+const Month = Date.getMonth() + 1;
+
+if (date < 1 || date > 31) {
+    console.log('ダメ');
+} else {
+    console.log('良し');
+}
+
+if (month !== Month) {
+    console.log('ダメ');
+}

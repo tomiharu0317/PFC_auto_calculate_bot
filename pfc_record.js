@@ -43,9 +43,9 @@ function doPost(e) {
       }
   } else if (command === '記録'){
       if (messageLength > 4 || messageLength < 3){
-          replyMessage = "フォーマット: 記録 <食材名> <分量> (<日付>)\n\n※空白を連続で挿入すると正しく判定できません。";
+          replyMessage = "フォーマット: 記録 <食材名> <分量(g)> (<日付>)\n\n※空白を連続で挿入すると正しく判定できません。";
       } else {
-          replyMessage = addRecord(messageList.slice(1));
+          replyMessage = addRecord(messageList.slice(1), messageLength);
       }
   } else if (command === '確認'){
       if (messageLength > 3 || messageLength < 3){
@@ -101,7 +101,7 @@ const help = (option) => {
     } else if (option === '追加'){
         replyMessage = "【コマンドの説明】\n追加：食材の栄養情報を登録します。\n\n・フォーマット\n追加 <食材名> <分量(あたり)(g)><タンパク質> <脂質> <炭水化物> <糖質> <カロリー(kcal)>\n\n※不明の場合、該当箇所を不明としてください。その場合、計算時は0として計算されます。\n\n・例\n追加 さつまいも 100 1.2 0.2 32 31 131\n\n追加 さつまいも 100 1.2 不明 32 不明 131";
     } else if (option === '記録'){
-        replyMessage = "【コマンドの説明】\n記録：その日に食べた食材の分量を記録します。食材は事前に追加コマンドから登録しておく必要があり、その情報を基に計算されます。\n\n・フォーマット\n記録 <食材名> <分量> (<日付>)\n\n・例\n記録　鶏胸肉　130　9/21\n\n※日付を省略した場合、記録した日を日付として記録します。";
+        replyMessage = "【コマンドの説明】\n記録：その日に食べた食材の分量を記録します。食材は事前に追加コマンドから登録しておく必要があり、その情報を基に計算されます。\n\n・フォーマット\n記録 <食材名> <分量(g)> (<日付>)\n\n・例\n記録　鶏胸肉　130　9/21\n\n※日付を省略した場合、記録した日を日付として記録します。";
     } else if (option === '変更'){
         replyMessage = "【コマンドの説明】\n変更：食材の成分情報、または記録を変更します。\n\n①食材の成分情報の変更\n\n・フォーマット\n変更 食材 <食材名> <分量(あたり)(g)><タンパク質> <脂質> <炭水化物> <糖質> <カロリー(kcal)>\n\n②記録の変更\n\n・フォーマット\n変更 記録 <日付> <食材名> <番号> <分量>\n\n※番号は確認コマンドで確認することが出来ます。";
     } else if (option === '確認'){
@@ -155,12 +155,138 @@ const addFood = (messageListOption) => {
 };
 
 //シートに記録
-const addRecord = (messageListOption) => {
+const addRecord = (messageListOption, messageLength) => {
 
-    let replyMessage = 'a';
+    let replyMessage = '';
+    let foodName = messageListOption[0];
+    let foodAmount = messageListOption[1];
+
+    const dateObj = new Date();
+    const hour = dateObj.getHours();
+    const minite = dateObj.getMinutes().toString().padStart(2, '0');
+    const month = dateObj.getMonth() + 1;
+    let date = dateObj.getDate();
+
+    let day = '';
+
+    let flag = true;
+
+    // 確認すること:日付が存在するか、食材名が存在するか、分量が数字か
+    // 記録　鶏胸肉　130　9/21
+
+// ------------------------------------------------------------------------------------
+    // 日付あったらその日、なかったらその場で当日の文字列をつくって列を取得
+
+    if (messageLength === 3) {
+        day = month + '/' + date;
+
+    } else {
+        // dayの検査
+        day = messageListOption[2];
+        [flag, date, replyMessage] = inspectDate(day);
+
+    }
+// ------------------------------------------------------------------------------------
+
+
+// 食材名が存在するか+食材情報の取得-------------------------------------------------------------------
+    // foodInfo = "入力した食材は存在しません" || 食材情報の文字列('さつまいも,1,2,3,4,5,6')
+    if (flag) {
+        let foodInfo = readFoodInfo(foodName);
+
+        if (foodInfo === "入力した食材は存在しません") {
+            replyMessage = foodInfo;
+            flag = false;
+        } else {
+            foodInfo = foodInfo.split(',');
+            // ["さつまいも", "1", "2", "3", "4", "5", "6"]
+        }
+    }
+
+// -------------------------------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------------------
+    if (flag) {
+        if (isNaN(messageListOption[1])) {
+            replyMessage = "数値を入力してください。";
+            flag = false;
+        }
+    }
+// ---------------------------------------------------------------------------------------
+
+    // 最終行にsetValues()
+    // 合計を取得
+    // 合計に、分量から計算した分を合計する
+    if (flag) {
+
+        // 該当する日付の行を取得
+        // 1 2 3 4 5
+        // 1 5 9 13 17
+        // 一般項 = 4n - 3
+        let targetColumn = 4 * date - 3;
+        let sheetLastRow = recordSheet.getLastRow();
+        let targetRow = findTargetRow(targetColumn, sheetLastRow);
+
+
+        let index = targetRow;
+        let time  = hour + ':' + minite;
+
+
+        let values = [[index, time, foodName, foodAmount]];
+
+        recordSheet.getRange(targetRow + 1, targetColumn, 1, 4).setValues(values);
+
+        replyMessage = "記録しました。";
+
+    }
+
 
     return replyMessage;
 };
+
+const findTargetRow = (targetColumn, sheetLastRow) => {
+
+    let values = recordSheet.getRange(1, targetColumn, sheetLastRow, 1).getValues();
+
+    let targetRow = values.filter(String).length;
+
+    return targetRow;
+}
+
+const inspectDate = (day) => {
+
+    let flag = true;
+    let date = '';
+    let replyMessage = '';
+
+    // '/'がある && monthDate.length === 2 && isNaN(month) === false && isNaN(date) = false
+    // && month === date.getMonth(); && 0 < date < 32
+
+    // isNaN(str) === false => 数値
+
+    if (day.includes('/')) {
+
+        let dateObj = new Date();
+        const MONTH = dateObj.getMonth() + 1;
+
+        let monthDateArray = day.split('/');
+        let month = monthDateArray[0];
+            date = Number(monthDateArray[1]);
+
+        if (monthDateArray.length === 2 && isNaN(month) === false && isNaN(date) === false && month === String(MONTH) && 0 < date && date < 32) {
+
+            // pass;
+        } else {
+            replyMessage = "日付のフォーマット: mm/dd\n\n例\n1/23, 3/11, 12/23";
+            flag = false;
+        }
+    } else {
+        replyMessage = "日付のフォーマット: mm/dd\n\n例\n1/23, 3/11, 12/23";
+        flag = false;
+    }
+
+    return [flag, date, replyMessage];
+}
 
 //食材情報を変更
 const changeFoodInfo = (messageListOption) => {
