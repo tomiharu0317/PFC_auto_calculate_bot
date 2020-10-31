@@ -2,8 +2,10 @@
 const addRecord = (messageListOption, messageLength) => {
 
     let replyMessage = '';
+    let foodInfo = [];
     let foodName = messageListOption[0];
     let foodAmount = messageListOption[1];
+    let foodAmountBase = '';
 
     const dateObj = new Date();
     const hour = dateObj.getHours();
@@ -36,13 +38,15 @@ const addRecord = (messageListOption, messageLength) => {
 // 食材名が存在するか+食材情報の取得-------------------------------------------------------------------
     // foodInfo = "入力した食材は存在しません" || 食材情報の文字列('さつまいも,1,2,3,4,5,6')
     if (flag) {
-        let foodInfo = readFoodInfo(foodName);
+        foodInfo = readFoodInfo(foodName);
 
         if (foodInfo === "入力した食材は存在しません") {
             replyMessage = foodInfo;
             flag = false;
         } else {
             foodInfo = foodInfo.split(',');
+
+            foodAmountBase = Number(foodInfo[1]);
             // ["さつまいも", "1", "2", "3", "4", "5", "6"]
         }
     }
@@ -55,6 +59,8 @@ const addRecord = (messageListOption, messageLength) => {
             replyMessage = "数値を入力してください。";
             flag = false;
         }
+    } else {
+        foodAmount = Number(foodAmount);
     }
 // ---------------------------------------------------------------------------------------
 
@@ -72,13 +78,29 @@ const addRecord = (messageListOption, messageLength) => {
         let targetRow = findTargetRow(targetColumn, sheetLastRow);
 
 
-        let index = targetRow;
+        let index = targetRow - 6;
         let time  = hour + ':' + minite;
 
 
         let values = [[index, time, foodName, foodAmount]];
 
-        recordSheet.getRange(targetRow + 1, targetColumn, 1, 4).setValues(values);
+        recordSheet.getRange(targetRow + 2, targetColumn, 1, 4).setValues(values);
+
+        // sumValues = [[''], [''], [''], [''], ['']];
+        let sumValues = recordSheet.getRange(3, targetColumn + 1, 5, 1).getValues();
+        // let sumValues = recordSheet.getRange(3, targetColumn + 1, 5, 1).getA1Notation();
+
+
+        let ratio = foodAmount / foodAmountBase;
+        let protein = (Number(sumValues[0]) + Number(foodInfo[2]) * ratio).toFixed(2);
+        let fat     = (Number(sumValues[1]) + Number(foodInfo[3]) * ratio).toFixed(2);
+        let carbo   = (Number(sumValues[2]) + Number(foodInfo[4]) * ratio).toFixed(2);
+        let sugar   = (Number(sumValues[3]) + Number(foodInfo[5]) * ratio).toFixed(2);
+        let calorie = (Number(sumValues[4]) + Number(foodInfo[6]) * ratio).toFixed(2);
+
+        sumValues = [[protein], [fat], [carbo], [sugar], [calorie]];
+
+        recordSheet.getRange(3, targetColumn + 1, 5, 1).setValues(sumValues);
 
         replyMessage = "記録しました。";
 
