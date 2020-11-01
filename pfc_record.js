@@ -128,16 +128,32 @@ const addFood = (messageListOption) => {
 
     let foodName = messageListOption.shift();
 
-    // foodNameがまだ登録されていない
+    // 関数化できる----------------------------------------------------------------
 
-    for (let i = 0; i < 6; i++) {
+    // foodNameが既に登録されていたらダメ
+    [replyMessage, flag] = readFoodInfo(foodName, 'null');
 
-        [replyMessage, flag] = isNumber(messageListOption[i]);
-
-        if (flag === false) {
-            break;
-        }
+    if (replyMessage === "入力した食材は存在しません") {
+        flag = true;
+    } else {
+        replyMessage = "入力した食材は既に登録されています。";
+        flag = false;
     }
+
+    // messageListOption の情報が全て数値
+    if (flag) {
+        for (let i = 0; i < 6; i++) {
+
+            [replyMessage, flag] = isNumber(messageListOption[i]);
+
+            if (flag === false) {
+                break;
+            }
+        }
+
+    }
+
+    //------------------------------------------------------------------
 
     // 値を登録
     if (flag) {
@@ -188,7 +204,7 @@ const addRecord = (messageListOption, messageLength) => {
 
     // foodName が存在するか + foodInfo の取得
     if (flag) {
-        [replyMessage, flag] = readFoodInfo(foodName);
+        [replyMessage, flag] = readFoodInfo(foodName, 'null');
 
         if (flag) {
             // [['さつまいも', '1', '2', '3', '4', '5', '6']]
@@ -261,14 +277,23 @@ const findTargetRow = (targetColumn, sheetLastRow) => {
 
 const inspectDate = (day) => {
 
-    let flag = true;
-    let date = '';
-    let replyMessage = '';
+    let replyMessage, flag, date;
 
+    [replyMessage, flag, date] = ['', true, ''];
+
+    // ---------------------------------------------------------
+    // 条件
+    // - '/'がある
+    // - '/'がひとつだけ
+    // - month, date が数値
+    // - 月が一致している（その月のシートしか編集できない）
+    // - date が　0 < date < 32
+    // ---------------------------------------------------------
     // '/'がある && monthDate.length === 2 && isNaN(month) === false && isNaN(date) = false
     // && month === date.getMonth(); && 0 < date < 32
-
+    //
     // isNaN(str) === false => 数値
+    // ---------------------------------------------------------
 
     if (day.includes('/')) {
 
@@ -297,24 +322,39 @@ const inspectDate = (day) => {
 //食材情報を変更
 const changeFoodInfo = (messageListOption) => {
 
-    let flag = true;
+    // messageListOption = ['foodAmountBase', 'pro', 'fat', 'carbo', 'sugar', 'cal'];
 
-    let replyMessage = '';
-
+    let replyMessage, flag;
     let values = [];
+    let copyListOption = [...messageListOption];
 
-    const copyListOption = [...messageListOption];
+    [replyMessage, flag] = ['', true];
 
+    // values = [['foodAmountBase', 'pro', 'fat', 'carbo', 'sugar', 'cal']];
     values.push(copyListOption);
 
     let foodName = messageListOption.shift();
 
-    for (let i = 0; i < 6; i++) {
-        if (isNaN(messageListOption[i])) {
-            replyMessage = "数値を入力してください。";
-            flag = false;
-            break;
+    // foodNameが既に登録されていたらダメ
+    [replyMessage, flag] = readFoodInfo(foodName, 'null');
+
+    if (replyMessage === "入力した食材は存在しません") {
+        flag = true;
+    } else {
+        replyMessage = "入力した食材は既に登録されています。";
+        flag = false;
+    }
+
+    if (flag) {
+        for (let i = 0; i < 6; i++) {
+
+            [replyMessage, flag] = isNumber(messageListOption[i]);
+
+            if (flag === false) {
+                break;
+            }
         }
+
     }
 
     // A2:lastRowまでの間で食材名と一致する行を探す => その行の内容を変更
@@ -323,41 +363,17 @@ const changeFoodInfo = (messageListOption) => {
     // 変更 食材 <元の食材名> <変更後の食材名> </変更後の食材名><分量(あたり)(g)><タンパク質> <脂質> <炭水化物> <糖質> <カロリー(kcal)></糖質>
     // になる
 
+    let targetRow = 0;
+
+    [replyMessage, flag, targetRow] = readFoodInfo(foodName, 'fetchTargetRow');
+
     if (flag) {
-        let lastRow = shokuzaiSheet.getLastRow();
-        let foodNum = lastRow - 1;
+        shokuzaiSheet.getRange(targetRow, 1, 1, 7).setValues(values);
 
-        let changeRow = 0;
-
-        // [['さつまいも'], ['もち'], ['そば'], ['プロテイン']]
-        let foodList = shokuzaiSheet.getRange(2, 1, foodNum, 1).getValues();
-
-        // replyMessage = shokuzaiSheet.getRange(2, 1, foodNum, 1).getA1Notation();
-
-
-        for (let j = 0; j < foodNum; j++) {
-            if (foodList[j] == foodName) {
-                changeRow = j + 2;
-                break;
-            }
-
-            if (j === foodNum - 1) {
-                replyMessage = "入力した食材は存在しません";
-                flag = false;
-                break;
-            }
-        }
-
-        if (flag) {
-            shokuzaiSheet.getRange(changeRow, 1, 1, 7).setValues(values);
-            // replyMessage = shokuzaiSheet.getRange(lastRow+1, 1, 1, 7).getA1Notation();
-
-            replyMessage = "食材 ${foodName} の情報を変更しました。".replace("${foodName}", foodName);
-        }
-
-
-
+        replyMessage = "食材 ${foodName} の情報を変更しました。".replace("${foodName}", foodName);
     }
+
+    // }
 
     return replyMessage;
 };
@@ -394,7 +410,7 @@ const changeRecord = (messageListOption) => {
     [flag, date, replyMessage] = inspectDate(day);
 
     if (flag) {
-        replyMessage = readFoodInfo(foodName);
+        [replyMessage, flag] = readFoodInfo(foodName, 'null');
 
         if (replyMessage === "入力した食材は存在しません") {
             flag = false;
@@ -508,7 +524,7 @@ const readInfo = (messageListOption) => {
     let target = messageListOption[1];
 
     if (command === '食材' && target !== '一覧') {
-        replyMessage = readFoodInfo(target);
+        replyMessage = readFoodInfo(target, null);
 
     } else if(command === '食材' && target === '一覧') {
         replyMessage = readFoodInfoAll();
@@ -525,7 +541,7 @@ const readInfo = (messageListOption) => {
     return replyMessage;
 };
 
-const readFoodInfo = (foodName) => {
+const readFoodInfo = (foodName, option) => {
 
     let replyMessage = '';
 
@@ -559,8 +575,11 @@ const readFoodInfo = (foodName) => {
         replyMessage = foodInfo[0].join('\n');
     }
 
-
-    return [replyMessage, flag];
+    if (option === 'fetchTargetRow') {
+        return [replyMessage, flag, targetRow];
+    } else {
+        return [replyMessage, flag];
+    }
 }
 
 const readFoodInfoAll = () => {

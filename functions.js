@@ -14,7 +14,7 @@ const isNumber = (target) => {
     return [replyMessage, flag];
 }
 
-const readFoodInfo = (foodName) => {
+const readFoodInfo = (foodName, option) => {
 
     let replyMessage = '';
 
@@ -48,8 +48,11 @@ const readFoodInfo = (foodName) => {
         replyMessage = foodInfo[0].join('\n');
     }
 
-
-    return [replyMessage, flag];
+    if (option === 'fetchTargetRow') {
+        return [replyMessage, flag, targetRow];
+    } else {
+        return [replyMessage, flag];
+    }
 }
 
 const findTargetRow = (targetColumn, sheetLastRow) => {
