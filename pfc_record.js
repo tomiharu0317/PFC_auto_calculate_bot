@@ -7,7 +7,6 @@ const sheet = SpreadsheetApp.openById(SHEET_ID);
 const shokuzaiSheet = sheet.getSheetByName('shokuzai');
 const recordSheet = sheet.getSheetByName("octo2020");
 
-
 const commands = ['ヘルプ', '追加', '記録', '変更', '確認'];
 
 function doPost(e) {
@@ -85,7 +84,7 @@ function doPost(e) {
   });
   // =======================================
 
-  return ContentService.createTextOutput(JSON.stringify({ content: 'post ok' })).setMimeType(ContentService.MimeType.JSON);  
+  return ContentService.createTextOutput(JSON.stringify({ content: 'post ok' })).setMimeType(ContentService.MimeType.JSON);
 }
 
 
@@ -116,26 +115,26 @@ const help = (option) => {
 //食材をshokuzaiシートに追加
 const addFood = (messageListOption) => {
 
+    // messageListOption = ['foodAmountBase', 'pro', 'fat', 'carbo', 'sugar', 'cal'];
 
-    let flag = true;
-
-    let replyMessage = '';
-
+    let replyMessage, flag;
     let values = [];
+    let copyListOption = [...messageListOption];
 
-    const copyListOption = [...messageListOption];
+    [replyMessage, flag] = ['', true];
 
+    // values = [['foodAmountBase', 'pro', 'fat', 'carbo', 'sugar', 'cal']];
     values.push(copyListOption);
 
     let foodName = messageListOption.shift();
 
-    // 文字列の数値 => isNaN => false
-    // 文字列 => isNaN => true
+    // foodNameがまだ登録されていない
 
     for (let i = 0; i < 6; i++) {
-        if (isNaN(messageListOption[i])) {
-            replyMessage = "数値を入力してください。";
-            flag = false;
+
+        [replyMessage, flag] = isNumber(messageListOption[i]);
+
+        if (flag === false) {
             break;
         }
     }
@@ -144,8 +143,8 @@ const addFood = (messageListOption) => {
     if (flag) {
 
         let lastRow = shokuzaiSheet.getLastRow();
-        shokuzaiSheet.getRange(lastRow+1, 1, 1, 7).setValues(values);
-        // replyMessage = shokuzaiSheet.getRange(lastRow+1, 1, 1, 7).getA1Notation();
+
+        shokuzaiSheet.getRange(lastRow + 1, 1, 1, 7).setValues(values);
 
         replyMessage = "食材 ${foodName} を追加しました。".replace("${foodName}", foodName);
 
@@ -157,8 +156,10 @@ const addFood = (messageListOption) => {
 //シートに記録
 const addRecord = (messageListOption, messageLength) => {
 
-    let replyMessage = '';
-    let foodInfo = [];
+    let replyMessage, flag, foodInfo, day;
+
+    [replyMessage, flag, foodInfo, day] = ['', true, [], ''];
+
     let foodName = messageListOption[0];
     let foodAmount = messageListOption[1];
     let foodAmountBase = '';
@@ -169,54 +170,41 @@ const addRecord = (messageListOption, messageLength) => {
     const month = dateObj.getMonth() + 1;
     let date = dateObj.getDate();
 
-    let day = '';
-
-    let flag = true;
 
     // 確認すること:日付が存在するか、食材名が存在するか、分量が数字か
-    // 記録　鶏胸肉　130　9/21
+    // messageListOption = ['鶏胸肉', '130', ('9/21')];
 
-// ------------------------------------------------------------------------------------
     // 日付あったらその日、なかったらその場で当日の文字列をつくって列を取得
-
     if (messageLength === 3) {
         day = month + '/' + date;
 
     } else {
-        // dayの検査
+
         day = messageListOption[2];
         [flag, date, replyMessage] = inspectDate(day);
 
     }
-// ------------------------------------------------------------------------------------
 
 
-// 食材名が存在するか+食材情報の取得-------------------------------------------------------------------
-    // foodInfo = "入力した食材は存在しません" || 食材情報の文字列('さつまいも,1,2,3,4,5,6')
+    // foodName が存在するか + foodInfo の取得
     if (flag) {
-        foodInfo = readFoodInfo(foodName);
+        [replyMessage, flag] = readFoodInfo(foodName);
 
-        if (foodInfo === "入力した食材は存在しません") {
-            replyMessage = foodInfo;
-            flag = false;
-        } else {
-            foodInfo = foodInfo.split(',');
+        if (flag) {
+            // [['さつまいも', '1', '2', '3', '4', '5', '6']]
+            foodInfo = replyMessage.split('\n');
 
             foodAmountBase = Number(foodInfo[1]);
-            // ["さつまいも", "1", "2", "3", "4", "5", "6"]
         }
     }
 
-// -------------------------------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------------------
+    // foodAmount が数値か
     if (flag) {
-        if (isNaN(messageListOption[1])) {
-            replyMessage = "数値を入力してください。";
-            flag = false;
+        [replyMessage, flag] = isNumber(foodAmount);
+
+        if (flag) {
+            foodAmount = Number(foodAmount);
         }
-    } else {
-        foodAmount = Number(foodAmount);
     }
 // ---------------------------------------------------------------------------------------
 
@@ -233,10 +221,8 @@ const addRecord = (messageListOption, messageLength) => {
         let sheetLastRow = recordSheet.getLastRow();
         let targetRow = findTargetRow(targetColumn, sheetLastRow);
 
-
         let index = targetRow - 6;
         let time  = hour + ':' + minite;
-
 
         let values = [[index, time, foodName, foodAmount]];
 
@@ -244,8 +230,6 @@ const addRecord = (messageListOption, messageLength) => {
 
         // sumValues = [[''], [''], [''], [''], ['']];
         let sumValues = recordSheet.getRange(3, targetColumn + 1, 5, 1).getValues();
-        // let sumValues = recordSheet.getRange(3, targetColumn + 1, 5, 1).getA1Notation();
-
 
         let ratio = foodAmount / foodAmountBase;
         let protein = (Number(sumValues[0]) + Number(foodInfo[2]) * ratio).toFixed(2);
@@ -381,10 +365,139 @@ const changeFoodInfo = (messageListOption) => {
 //シートの記録を変更
 const changeRecord = (messageListOption) => {
 
-    let replyMessage = 'a';
+    let replyMessage = '';
+    let flag = true;
+    let date = '';
+
+    let day = messageListOption[0];
+    let foodName = messageListOption[1];
+    let recordIndex = messageListOption[2];
+    let laterFoodAmount = messageListOption[3];
+
+    let foodInfo = [];
+    let foodAmountBase = 0;
+
+    let targetColumn = 0;
+    let sheetLastRow = 0;
+    let targetRow = 0;
+
+    // フォーマット: 変更 記録 <日付> <食材名> <番号> <分量>
+
+    // このフォーマットである意味もない気がする
+    // 変更　記録　日付　番号　食材名　分量
+    // の方がいい
+    // 日付チェック、食材存在の有無、番号が1 < index < lastrow - n か
+
+    // 食材存在の有無の部分を関数化して分解
+    // indpectDate()
+
+    [flag, date, replyMessage] = inspectDate(day);
+
+    if (flag) {
+        replyMessage = readFoodInfo(foodName);
+
+        if (replyMessage === "入力した食材は存在しません") {
+            flag = false;
+        } else {
+            foodInfo = replyMessage.split('\n');
+            foodAmountBase = Number(foodInfo[1]);
+        }
+    }
+
+    if (flag) {
+        [replyMessage, flag] = isNumber(recordIndex);
+        [replyMessage, flag] = isNumber(laterFoodAmount);
+
+        if (flag) {
+            recordIndex = Number(recordIndex);
+
+            targetColumn = 4 * date - 3;
+            sheetLastRow = recordSheet.getLastRow();
+            targetRow = findTargetRow(targetColumn, sheetLastRow);
+
+            if (recordIndex < 1 || targetRow - 7 < recordIndex ) {
+                replyMessage = "入力された番号の記録は存在しません。";
+                flag = false;
+            } else {
+                targetRow = recordIndex + 2;
+
+            }
+
+
+        }
+    }
+
+    if (flag) {
+        // 合計からもとのfoodAmountの文を引く
+        // 合計にfoodAmountの文を足す
+        // 合計に記録
+        // targetRowに記録
+
+        // sumValues = [[''], [''], [''], [''], ['']];
+        let sumValues = recordSheet.getRange(3, targetColumn + 1, 5, 1).getValues();
+        let changedValues = [];
+
+        // formerFoodAmount = [['120']];
+        // laterFoodAmount = '100';
+        let formerFoodAmount = recordSheet.getRange(targetRow, targetColumn + 3).getValues();
+            laterFoodAmount  = Number(laterFoodAmount);
+
+        let ratio = formerFoodAmount / foodAmountBase;
+
+        let proteinBase = Number(foodInfo[2]);
+        let fatBase     = Number(foodInfo[3]);
+        let carobBase   = Number(foodInfo[4]);
+        let sugarBase   = Number(foodInfo[5]);
+        let calorieBase = Number(foodInfo[6]);
+
+
+        let protein = (Number(sumValues[0]));
+        let fat     = (Number(sumValues[1]));
+        let carbo   = (Number(sumValues[2]));
+        let sugar   = (Number(sumValues[3]));
+        let calorie = (Number(sumValues[4]));
+
+
+        // 元の奴を引く
+        protein -=  proteinBase * ratio;
+        fat     -=  fatBase     * ratio;
+        carbo   -=  carobBase   * ratio;
+        sugar   -=  sugarBase   * ratio;
+        calorie -=  calorieBase * ratio;
+
+        // 後の奴を足す
+        ratio = laterFoodAmount / foodAmountBase;
+
+        protein +=  (proteinBase * ratio).toFixed(2);
+        fat     +=  (fatBase     * ratio).toFixed(2);
+        carbo   +=  (carobBase   * ratio).toFixed(2);
+        sugar   +=  (sugarBase   * ratio).toFixed(2);
+        calorie +=  (calorieBase * ratio).toFixed(2);
+
+        sumValues = [[protein], [fat], [carbo], [sugar], [calorie]];
+        changedValues = [[foodName, laterFoodAmount]];
+
+
+        recordSheet.getRange(3, targetColumn + 1, 5, 1).setValues(sumValues);
+        recordSheet.getRange(targetRow, targetColumn + 2, 1, 2).setValues(changedValues);
+
+        replyMessage = "記録を変更しました。";
+    }
 
     return replyMessage;
 };
+
+const isNumber = (target) => {
+    let replyMessage = '';
+    let flag = true;
+
+    if (isNaN(target)) {
+        replyMessage = "数値を入力してください。";
+        flag = false;
+    }
+
+    return [replyMessage, flag];
+}
 
 //シートの内容を確認する
 const readInfo = (messageListOption) => {
@@ -447,7 +560,7 @@ const readFoodInfo = (foodName) => {
     }
 
 
-    return replyMessage;
+    return [replyMessage, flag];
 }
 
 const readFoodInfoAll = () => {
