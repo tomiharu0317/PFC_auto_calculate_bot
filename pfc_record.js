@@ -98,13 +98,13 @@ const help = (option) => {
         replyMessage = "【使い方】\n使用できるコマンドを、指定されたフォーマットに沿って入力していただきます。空白は半角・全角を区別しません。改行による入力には対応しておりません。\n\n【使用できるコマンド】\n追加、記録、変更、確認、ヘルプ\n\n【ヘルプコマンド】\n\nヘルプ　概要：この説明文が表示されます。\n\nヘルプ　追加：追加コマンドの説明、フォーマット\n\nヘルプ　記録：記録コマンドの説明、フォーマット\n\nヘルプ　変更：変更コマンドの説明、フォーマット\n\nヘルプ　確認：確認コマンドの説明、フォーマット\n";
 
     } else if (option === '追加'){
-        replyMessage = "【コマンドの説明】\n追加：食材の栄養情報を登録します。\n\n・フォーマット\n追加 <食材名> <分量(あたり)(g)><タンパク質> <脂質> <炭水化物> <糖質> <カロリー(kcal)>\n\n※不明の場合、該当箇所を不明としてください。その場合、計算時は0として計算されます。\n\n・例\n追加 さつまいも 100 1.2 0.2 32 31 131\n\n追加 さつまいも 100 1.2 不明 32 不明 131";
+        replyMessage = "【コマンドの説明】\n追加：食材の栄養情報を登録します。\n\n・フォーマット\n追加 <食材名> <分量(あたり)(g)><タンパク質> <脂質> <炭水化物> <糖質> <カロリー(kcal)>\n\n※不明の場合、該当箇所を0としてください。\n\n・例\n追加 さつまいも 100 1.2 0.2 32 31 131\n\n追加 さつまいも 100 1.2 0 32 0 131";
     } else if (option === '記録'){
         replyMessage = "【コマンドの説明】\n記録：その日に食べた食材の分量を記録します。食材は事前に追加コマンドから登録しておく必要があり、その情報を基に計算されます。\n\n・フォーマット\n記録 <食材名> <分量(g)> (<日付>)\n\n・例\n記録　鶏胸肉　130　9/21\n\n※日付を省略した場合、記録した日を日付として記録します。";
     } else if (option === '変更'){
         replyMessage = "【コマンドの説明】\n変更：食材の成分情報、または記録を変更します。\n\n①食材の成分情報の変更\n\n・フォーマット\n変更 食材 <食材名> <分量(あたり)(g)><タンパク質> <脂質> <炭水化物> <糖質> <カロリー(kcal)>\n\n②記録の変更\n\n・フォーマット\n変更 記録 <日付> <食材名> <番号> <分量>\n\n※番号は確認コマンドで確認することが出来ます。";
     } else if (option === '確認'){
-        replyMessage = "【コマンドの説明】\n確認：食材の情報、または記録内容を表示します。\n\n②登録された食材の一覧を取得\n確認 食材 一覧\n\n③食材の成分情報の確認\n\n・フォーマット\n確認 食材 <食材名>\n\n②記録の確認\n\n・フォーマット\n確認 記録 <日付>\n\n・例\n確認　9/21";
+        replyMessage = "【コマンドの説明】\n確認：食材の情報、または記録内容を表示します。\n\n①登録された食材の一覧を取得\n確認 食材 一覧\n\n②食材の成分情報の確認\n\n・フォーマット\n確認 食材 <食材名>\n\n③記録の確認\n\n・フォーマット\n確認 記録 <日付>\n\n・例\n確認　9/21";
     } else {
         replyMessage = "【使い方】\n使用できるコマンドを、指定されたフォーマットに沿って入力していただきます。空白は半角・全角を区別しません。\n\n【使用できるコマンド】\n追加、記録、変更、確認、ヘルプ\n\n【ヘルプコマンド】\n\nヘルプ　概要：この説明文が表示されます。\n\nヘルプ　追加：追加コマンドの説明、フォーマット\n\nヘルプ　記録：記録コマンドの説明、フォーマット\n\nヘルプ　変更：変更コマンドの説明、フォーマット\n\nヘルプ　確認：確認コマンドの説明、フォーマット\n";
     }
@@ -308,11 +308,11 @@ const inspectDate = (day) => {
 
             // pass;
         } else {
-            replyMessage = "日付のフォーマット: mm/dd\n\n例\n1/23, 3/11, 12/23";
+            replyMessage = "日付のフォーマット: mm/dd\n\n例\n1/23, 3/11, 12/23\n\n月が一致している必要があります。";
             flag = false;
         }
     } else {
-        replyMessage = "日付のフォーマット: mm/dd\n\n例\n1/23, 3/11, 12/23";
+        replyMessage = "日付のフォーマット: mm/dd\n\n例\n1/23, 3/11, 12/23\n\n月が一致している必要があります。";
         flag = false;
     }
 
@@ -437,7 +437,8 @@ const changeRecord = (messageListOption) => {
 
         // formerFoodAmount = [['120']];
         // laterFoodAmount = '100';
-        let formerFoodAmount = recordSheet.getRange(targetRow, targetColumn + 3).getValues();
+        let formerFoodAmount = recordSheet.getRange(targetRow, targetColumn + 3, 1, 1).getValues();
+            formerFoodAmount = Number(formerFoodAmount[0][0]);
             laterFoodAmount  = Number(laterFoodAmount);
 
         let ratio = formerFoodAmount / foodAmountBase;
@@ -466,11 +467,11 @@ const changeRecord = (messageListOption) => {
         // 後の奴を足す
         ratio = laterFoodAmount / foodAmountBase;
 
-        protein +=  (proteinBase * ratio).toFixed(2);
-        fat     +=  (fatBase     * ratio).toFixed(2);
-        carbo   +=  (carobBase   * ratio).toFixed(2);
-        sugar   +=  (sugarBase   * ratio).toFixed(2);
-        calorie +=  (calorieBase * ratio).toFixed(2);
+        protein = (protein + (proteinBase * ratio)).toFixed(2);
+        fat     = (fat     + (fatBase     * ratio)).toFixed(2);
+        carbo   = (carbo   + (carobBase   * ratio)).toFixed(2);
+        sugar   = (sugar   + (sugarBase   * ratio)).toFixed(2);
+        calorie = (calorie + (calorieBase * ratio)).toFixed(2);
 
         sumValues = [[protein], [fat], [carbo], [sugar], [calorie]];
         changedValues = [[foodName, laterFoodAmount]];
