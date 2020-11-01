@@ -1,11 +1,11 @@
-const ACCESS_TOKEN = 'J6vOd6E/I18qzMmXeSH4J2Lb72tsZBTKOTjqFHSh72f8bQjNHT6Rceqyr/ncJI9CgHSiLiuqjSygna6MYX2Ev0/Vi+REzDF90WS6QUXl4OWXfx7I1uelqB94kyt27jua65K+cd500nVdgagK0a9PkQdB04t89/1O/w1cDnyilFU=';
+const ACCESS_TOKEN = 'ここにアクセストークン';
 const REPLY_URL = 'https://api.line.me/v2/bot/message/reply';
 
-const SHEET_ID = "1TY6ppgtHWGisrL8zsrThcKSyOalC-7Ao53P5OVoQGcE";
+const SHEET_ID = 'ここにスプレッドシートのID';
 
 const sheet = SpreadsheetApp.openById(SHEET_ID);
 const shokuzaiSheet = sheet.getSheetByName('shokuzai');
-const recordSheet = sheet.getSheetByName("octo2020");
+const recordSheet = sheet.getSheetByName("nov2020");
 
 const commands = ['ヘルプ', '追加', '記録', '変更', '確認'];
 
