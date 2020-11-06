@@ -1,3 +1,20 @@
+## ボットの基本コマンド
+
+| コマンド   | 意味                                                                            |
+| ------ | ----------------------------------------------------------------------------- |
+| ヘルプ 概要 | 基本的な使い方とヘルプコマンドの一覧を表示します                                                      |
+| ヘルプ 追加 | 食材追加コマンドの説明とフォーマットを表示します                                                      |
+| ヘルプ 記録 | 記録コマンドの説明とフォーマットを表示します                                                        |
+| ヘルプ 変更 | 食材の情報、もしくは記録を変更するこのコマンドの説明とフォーマットを表示します                                       |
+| ヘルプ 確認 | 食材の情報、もしくは記録を確認するこのコマンドの説明とフォーマットを表示します                                       |
+| 追加     | 食材情報を追加するコマンドです。食材の名前、分量（あたり）、タンパク質、脂質、炭水化物、糖質、カロリーの情報を登録し、記録時に自動で計算されるようにします。 |
+| 記録     | 食材情報と記録された分量からそれぞれの項目を計算します                                                   |
+| 変更     | 食材の情報、もしくは記録の内容を変更します                                                         |
+| 確認     | 食材の情報、もしくは記録の内容を確認します                                                                              |
+
+
+<img src="img/line_message_sample.png" height=350>
+
 ## ボットを使用するには
 
 - [LINE Developers](https://developers.line.biz/ja/) にアクセスする
@@ -124,11 +141,32 @@ const recordSheet = sheet.getSheetByName("nov2020");
 <img src="img/introduce_as_webapp.png" width=400>
 
 - **Project versionをNewにして**、
+
+<img src="img/project_ver_new.png" width=400>
+
 - **Who has access to the app** を **Anyone, even anonymous** にして、
 
 更新する
 
 <img src="img/deploy.png" width=400>
+
+初回は、
+
+<img src="img/authorization_required.png" height=300>
+
+と出るので、`許可を確認`をクリックする。すると、`このアプリは確認されていません`
+と出るので、左下にある`詳細`をクリックする
+
+<img src="img/this_app_is_not_confirmed.png" height=300>
+
+詳細を表示したら、一番下に`無駄のプロジェクト（安全ではないページ）に移動`
+が出るので、これをクリックする
+
+<img src="img/to_not_safe_page.png" height=300>
+
+すると、下の画像のようになり、`許可`を選択できるようになるので、これを選択する
+
+<img src="img/permit.png" height=300>
 
 更新が成功すると、`Current web app URL` がでるので、これをコピーし、
 
@@ -142,5 +180,3 @@ const recordSheet = sheet.getSheetByName("nov2020");
 更新できたら、`Webhookの利用`という欄ができるので、これを有効にする
 
 そして、`Messaging API 設定` にある QRコードを読み込めば、ボットを友達に追加でき、使うことができる
-
-<img src="img/line_message_sample.png" width=400>
