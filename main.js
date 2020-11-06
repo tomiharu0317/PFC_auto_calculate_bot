@@ -207,7 +207,8 @@ const addRecord = (messageListOption, messageLength) => {
         [replyMessage, flag] = readFoodInfo(foodName, 'null');
 
         if (flag) {
-            // [['さつまいも', '1', '2', '3', '4', '5', '6']]
+            // replyMessage = 'さつまいも\n100\n1\n2\n3\n4\n5';
+            // foodInfo = ['さつまいも', '100', '1', '2', '3', '4', '5'];
             foodInfo = replyMessage.split('\n');
 
             foodAmountBase = Number(foodInfo[1]);
@@ -248,11 +249,11 @@ const addRecord = (messageListOption, messageLength) => {
         let sumValues = recordSheet.getRange(3, targetColumn + 1, 5, 1).getValues();
 
         let ratio = foodAmount / foodAmountBase;
-        let protein = (Number(sumValues[0]) + Number(foodInfo[2]) * ratio).toFixed(2);
-        let fat     = (Number(sumValues[1]) + Number(foodInfo[3]) * ratio).toFixed(2);
-        let carbo   = (Number(sumValues[2]) + Number(foodInfo[4]) * ratio).toFixed(2);
-        let sugar   = (Number(sumValues[3]) + Number(foodInfo[5]) * ratio).toFixed(2);
-        let calorie = (Number(sumValues[4]) + Number(foodInfo[6]) * ratio).toFixed(2);
+        let protein = (Number(sumValues[0]) + (Number(foodInfo[2]) * ratio)).toFixed(2);
+        let fat     = (Number(sumValues[1]) + (Number(foodInfo[3]) * ratio)).toFixed(2);
+        let carbo   = (Number(sumValues[2]) + (Number(foodInfo[4]) * ratio)).toFixed(2);
+        let sugar   = (Number(sumValues[3]) + (Number(foodInfo[5]) * ratio)).toFixed(2);
+        let calorie = (Number(sumValues[4]) + (Number(foodInfo[6]) * ratio)).toFixed(2);
 
         sumValues = [[protein], [fat], [carbo], [sugar], [calorie]];
 
@@ -530,21 +531,29 @@ const readFoodInfo = (foodName, option) => {
     [replyMessage, flag, targetRow] = ['', true, 0];
 
     let lastRow = shokuzaiSheet.getLastRow();
-    let foodNum = lastRow - 1;
 
-    // [['さつまいも'], ['もち'], ['そば'], ['プロテイン']]
-    let foodList = shokuzaiSheet.getRange(2, 1, foodNum, 1).getValues();
+    if (lastRow === 1) {
+        replyMessage = "入力した食材は存在しません";
+        flag = false;
+    }
 
-    for (let j = 0; j < foodNum; j++) {
-        if (foodList[j] == foodName) {
-            targetRow = j + 2;
-            break;
-        }
+    if (flag) {
+        let foodNum = lastRow - 1;
 
-        if (j === foodNum - 1) {
-            replyMessage = "入力した食材は存在しません";
-            flag = false;
-            break;
+        // [['さつまいも'], ['もち'], ['そば'], ['プロテイン']]
+        let foodList = shokuzaiSheet.getRange(2, 1, foodNum, 1).getValues();
+
+        for (let j = 0; j < foodNum; j++) {
+            if (foodList[j] == foodName) {
+                targetRow = j + 2;
+                break;
+            }
+
+            if (j === foodNum - 1) {
+                replyMessage = "入力した食材は存在しません";
+                flag = false;
+                break;
+            }
         }
     }
 
